@@ -9,7 +9,7 @@ Bug Fixes
 Other
 -----
 
--
+- Reimplement support for ASDF-in-FITS in this package. [#110]
 
 1.0.0 (2023-02-14)
 ==================
