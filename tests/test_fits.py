@@ -664,9 +664,9 @@ def test_table_linking(tmp_path):
     with DataModel(schema=schema) as dm:
         test_array = np.array([(1, 2), (3, 4)], dtype=[("A_COL", "i1"), ("B_COL", "i1")])
 
-        # assigning to the model will convert the array to a FITS_rec
+        # assigning to the model should NOT convert the array to a FITS_rec
         dm.test_table = test_array
-        assert isinstance(dm.test_table, fits.FITS_rec)
+        assert not isinstance(dm.test_table, fits.FITS_rec)
 
         # save the model (with the table)
         dm.save(file_path)

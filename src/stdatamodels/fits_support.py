@@ -237,7 +237,7 @@ def _get_or_make_hdu(hdulist, hdu_name, index=None, hdu_type=None, value=None):
             hdulist.remove(hdu)
             hdu = new_hdu
         elif value is not None:
-            hdu.data = value
+            hdu.data = value.copy()
     return hdu
 
 
@@ -324,7 +324,7 @@ def _fits_array_writer(fits_context, validator, _, instance, schema):
     hdu_type = _get_hdu_type(hdu_name, schema=schema, value=instance)
     hdu = _get_or_make_hdu(fits_context.hdulist, hdu_name, index=index, hdu_type=hdu_type)
 
-    hdu.data = instance
+    hdu.data = instance.copy()
     if instance_id in fits_context.extension_array_links:
         if fits_context.extension_array_links[instance_id]() is not hdu:
             raise ValueError("Linking one array to multiple hdus is not supported")
