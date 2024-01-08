@@ -573,6 +573,8 @@ class DataModel(properties.ObjectNode):
         """
         Open an asdf object from a filename or create a new asdf object
         """
+        if "lazy_tree" not in kwargs:
+            kwargs["lazy_tree"] = False
         if isinstance(init, str):
             asdffile = asdf.open(init,
                                  ignore_version_mismatch=ignore_version_mismatch,

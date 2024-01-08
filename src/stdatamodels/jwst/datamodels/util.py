@@ -135,7 +135,7 @@ def open(init=None, guess=True, memmap=False, **kwargs):
             return ModelContainer(init, **kwargs)
 
         elif file_type == "asdf":
-            asdffile = asdf.open(init, copy_arrays=not memmap)
+            asdffile = asdf.open(init, copy_arrays=not memmap, lazy_tree=False)
 
             # Detect model type, then get defined model, and call it.
             new_class = _class_from_model_type(asdffile)

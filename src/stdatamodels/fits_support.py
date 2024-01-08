@@ -738,6 +738,7 @@ def from_fits_asdf(hdulist,
         ignore_version_mismatch=ignore_version_mismatch,
         ignore_unrecognized_tag=ignore_unrecognized_tag,
         ignore_missing_extensions=ignore_missing_extensions,
+        lazy_tree=False,
         **akwargs
     )
     # map hdulist to blocks here
