@@ -497,7 +497,7 @@ def to_fits(tree, schema, hdulist=None):
     if _ASDF_EXTENSION_NAME in hdulist:
         del hdulist[_ASDF_EXTENSION_NAME]
 
-    hdulist.append(_create_asdf_hdu(tree))
+    hdulist.append(_create_asdf_hdu({k: v for (k, v) in tree.items() if k != "extra_fits"}))
 
     return hdulist
 

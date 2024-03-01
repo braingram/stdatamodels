@@ -1,3 +1,4 @@
+import io
 import re
 import warnings
 
@@ -81,15 +82,39 @@ def test_from_scratch(tmp_path):
 def test_extra_fits(tmp_path):
     file_path = tmp_path/"test.fits"
 
+    # make an empty model
     with FitsModel() as dm:
         dm.save(file_path)
 
+    # add extra data outside of stdatamodels api
     with fits.open(file_path) as hdul:
         hdul[0].header["FOO"] = "BAR"
+        hdul.append(fits.ImageHDU(np.zeros((30, 30), dtype='f4'), name="MYIMG"))
         hdul.writeto(file_path, overwrite=True)
 
+    # confirm that the data is read in
     with DataModel(file_path) as dm:
         assert any(h for h in dm.extra_fits.PRIMARY.header if h == ["FOO", "BAR", ""])
+        assert dm.extra_fits.MYIMG.data.shape == (30, 30)
+        assert dm.extra_fits.MYIMG.data.dtype.type == np.float32
+        # re-save the data
+        dm.save(file_path)
+
+    # check that it's available
+    with fits.open(file_path) as hdul:
+        assert hdul[0].header["FOO"] == "BAR"
+        assert hdul["MYIMG"].data.shape == (30, 30)
+        assert hdul["MYIMG"].data.dtype.type == np.float32
+        # and that it's NOT in the ASDF extension
+        asdf_bytes = io.BytesIO(hdul["ASDF"].data.tobytes())
+        with asdf.open(asdf_bytes, "r") as af:
+            assert "extra_fits" not in af
+
+    # and finally that we can read it in again
+    with DataModel(file_path) as dm:
+        assert any(h for h in dm.extra_fits.PRIMARY.header if h == ["FOO", "BAR", ""])
+        assert dm.extra_fits.MYIMG.data.shape == (30, 30)
+        assert dm.extra_fits.MYIMG.data.dtype.type == np.float32
 
 
 def test_hdu_order(tmp_path):
