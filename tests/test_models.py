@@ -367,3 +367,19 @@ def test_garbage_collectable(ModelType, tmp_path):
             # many models which would indicate they are difficult to garbage
             # collect.
             assert len(mids) < 2
+
+
+def test_table_overrun(tmp_path):
+    """
+    wah?
+    """
+    fn = tmp_path / "test.fits"
+
+    write_model = TableModel()
+    arr = np.arange(16 * 32, dtype='f8').reshape((16, 32))
+    write_model.one_column_table = arr
+    np.testing.assert_equal(arr, write_model.one_column_table['col'])
+    write_model.save(fn)
+
+    with TableModel(fn) as read_model:
+        np.testing.assert_equal(arr, read_model.one_column_table['col'])

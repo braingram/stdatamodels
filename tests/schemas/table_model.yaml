@@ -1,5 +1,5 @@
 $schema: http://stsci.edu/schemas/yaml-schema/draft-01
-id: http://example.com/schemas/basic_model
+id: http://example.com/schemas/table_model
 title: Model with a recarray-style table.
 
 allOf:
@@ -23,4 +23,9 @@ allOf:
           - name: float32_column_with_ndim
             datatype: float32
             ndim: 2
+      one_column_table:
+        fits_hdu: ONECOL
+        datatype:
+          - name: col
+            datatype: float64
 ...
