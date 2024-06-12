@@ -183,13 +183,13 @@ class DataModel(properties.ObjectNode):
         shape = None
 
         if init is None:
-            asdffile = self.open_asdf(init=None, **kwargs)
+            asdffile = AsdfFile(None)
 
         elif isinstance(init, dict):
-            asdffile = self.open_asdf(init=init, **kwargs)
+            asdffile = AsdfFile(init)
 
         elif isinstance(init, np.ndarray):
-            asdffile = self.open_asdf(init=None, **kwargs)
+            asdffile = AsdfFile(None)
 
             shape = init.shape
             is_array = True
@@ -201,7 +201,7 @@ class DataModel(properties.ObjectNode):
 
             shape = init
             is_shape = True
-            asdffile = self.open_asdf(init=None, **kwargs)
+            asdffile = AsdfFile(None)
 
         elif isinstance(init, DataModel):
             asdffile = None
@@ -236,7 +236,7 @@ class DataModel(properties.ObjectNode):
             elif file_type == "asdf":
                 # use memmap argument of "copy_arrays" was not defined
                 kwargs["copy_arrays"] = kwargs.get("copy_arrays", not memmap)
-                asdffile = self.open_asdf(init=init, **kwargs)
+                asdffile = asdf.open(init, **kwargs)
 
             else:
                 # TODO handle json files as well
@@ -557,26 +557,6 @@ class DataModel(properties.ObjectNode):
         return output_path
 
     @staticmethod
-    def open_asdf(init=None,
-                  ignore_version_mismatch=True,
-                  ignore_unrecognized_tag=False,
-                  **kwargs):
-        """
-        Open an asdf object from a filename or create a new asdf object
-        """
-        if isinstance(init, str):
-            asdffile = asdf.open(init,
-                                 ignore_version_mismatch=ignore_version_mismatch,
-                                 ignore_unrecognized_tag=ignore_unrecognized_tag,
-                                 **kwargs)
-
-        else:
-            asdffile = AsdfFile(init,
-                            ignore_version_mismatch=ignore_version_mismatch,
-                            ignore_unrecognized_tag=ignore_unrecognized_tag
-                            )
-        return asdffile
-
     @classmethod
     def from_asdf(cls, init, schema=None, **kwargs):
         """
@@ -617,9 +597,9 @@ class DataModel(properties.ObjectNode):
         self.on_save(init)
         self.validate()  # required to trigger ValidationWarning
         tree = convert_fitsrec_to_array_in_tree(self._instance)
-        # don't open_asdf(tree) as this will cause a second validation of the tree
+        # don't AsdfFile(tree) as this will cause a second validation of the tree
         # instead open an empty tree, then assign to the hidden '_tree'
-        asdffile = self.open_asdf(None, **kwargs)
+        asdffile = AsdfFile(None)
         asdffile._tree = tree
         asdffile.write_to(init, *args, **kwargs)
 

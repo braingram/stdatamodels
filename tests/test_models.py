@@ -157,22 +157,6 @@ def test_initialize_arrays_with_arglist():
     assert np.array_equal(m.area, area)
 
 
-def test_open_asdf_model(tmp_path):
-    # Open an empty asdf file, pass extra arguments
-    with DataModel(ignore_version_mismatch=False, ignore_unrecognized_tag=True) as model:
-        assert not model._asdf._ignore_version_mismatch
-        assert model._asdf._ignore_unrecognized_tag
-
-    file_path = tmp_path/"test.asdf"
-
-    with asdf.AsdfFile() as af:
-        af.write_to(file_path)
-
-    with DataModel(file_path, ignore_version_mismatch=False, ignore_unrecognized_tag=True) as model:
-        assert not model._asdf._ignore_version_mismatch
-        assert model._asdf._ignore_unrecognized_tag
-
-
 def test_update_from_dict(tmp_path):
     """Test update method from a dictionary"""
     file_path = tmp_path/"update.asdf"
