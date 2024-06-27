@@ -270,6 +270,15 @@ def _find_property(schema, attr):
         find = 'default' in subschema
     return find
 
+
+class _DeferredNode:
+    def __init__(self, callback):
+        self.callback = callback
+
+    def __call__(self):
+        return self.callback()
+
+
 class Node():
     def __init__(self, attr, instance, schema, ctx, parent):
         self._name = attr
@@ -311,6 +320,10 @@ class ObjectNode(Node):
             val = _make_default(attr, schema, self._ctx)
             if val is not None:
                 self._instance[attr] = val
+
+        if isinstance(val, _DeferredNode):
+            val = val()
+            self._instance[attr] = val
 
         if isinstance(val, dict):
             node = ObjectNode(attr, val, schema, self._ctx, self)

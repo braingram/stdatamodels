@@ -784,8 +784,11 @@ def _map_hdulist_to_arrays(hdulist, af):
                     pair = (parts.group("name"), ver)
                 else:
                     pair = ver
-            data = hdulist[pair].data
-            return data
+
+            def callback(hdulist=hdulist, pair=pair):
+                return hdulist[pair].data
+
+            return properties._DeferredNode(callback)
         return node
     # don't assign to af.tree to avoid an extra validation
     af._tree = treeutil.walk_and_modify(af.tree, callback)
