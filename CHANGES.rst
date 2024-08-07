@@ -3,6 +3,8 @@
 
 - replace usages of ``copy_arrays`` with ``memmap`` [#306]
 
+- remove uses of now unused ``ignore_version_mismatch`` [#313]
+
 2.0.0 (2024-06-24)
 ===================
 
