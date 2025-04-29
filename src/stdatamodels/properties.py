@@ -376,7 +376,10 @@ class ObjectNode(Node):
         except KeyError as err:
             if schema == {}:
                 raise AttributeError(f"No attribute '{attr}'") from err
-
+            import inspect
+            caller = inspect.stack()[1]
+            if "hasattr" in caller.frame.f_code.co_names and ".hasattr" not in caller.code_context[0]:
+                raise Exception(f"hasattr used: {caller}, {caller.code_context}")
             val = _make_default(attr, schema, self._ctx)
             if val is not None:
                 self._instance[attr] = val
