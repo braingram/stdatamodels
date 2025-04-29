@@ -152,8 +152,9 @@ def test_array_type():
 
 def test_copy_model():
     with DataModel() as dm:
+        dm.meta = {}
         with DataModel(dm) as dm2:
-            assert hasattr(dm2, "meta")
+            assert dm2.hasattr("meta")
 
 
 def test_dtype_match():

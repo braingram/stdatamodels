@@ -253,14 +253,14 @@ def test_slit_from_image():
     im.meta.instrument.name = "MIRI"
     slit_dm = SlitDataModel(im)
     assert_allclose(im.data, slit_dm.data)
-    assert hasattr(slit_dm, "wavelength")
+    assert slit_dm.hasattr("wavelength")
     # this should be enabled after gwcs starts using non-coordinate inputs
-    # assert not hasattr(slit_dm, 'meta')
+    # assert not slit_dm.hasattr('meta')
 
     slit = SlitModel(im)
     assert_allclose(im.data, slit.data)
     assert_allclose(im.err, slit.err)
-    assert hasattr(slit, "wavelength")
+    assert slit.hasattr("wavelength")
     assert slit.meta.instrument.name == "MIRI"
 
     im = ImageModel(slit)
@@ -293,7 +293,7 @@ def test_abvega_offset_model():
     path = ROOT_DIR / "nircam_abvega_offset.asdf"
     with ABVegaOffsetModel(path) as model:
         assert isinstance(model, ABVegaOffsetModel)
-        assert hasattr(model, "abvega_offset")
+        assert model.hasattr("abvega_offset")
         assert isinstance(model.abvega_offset, Table)
         assert model.abvega_offset.colnames == ["filter", "pupil", "abvega_offset"]
         model.validate()
