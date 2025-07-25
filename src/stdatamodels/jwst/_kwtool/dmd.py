@@ -1,7 +1,7 @@
 import asdf
 
 import stdatamodels.jwst.datamodels as dm
-import stdatamodels.schema
+from stdatamodels._schema import walk_schema
 
 
 __all__ = ["load"]
@@ -30,7 +30,7 @@ def load(skip_models=None):
         keywords = []
         if klass.schema_url:
             schema = asdf.schema.load_schema(klass.schema_url, resolve_references=True)
-            stdatamodels.schema.walk_schema(schema, _get_schema_keywords_callback, keywords)
+            walk_schema(schema, _get_schema_keywords_callback, keywords)
         class_path = ".".join([klass.__module__, klass.__name__])
         keywords_by_datamodel[class_path] = keywords
 

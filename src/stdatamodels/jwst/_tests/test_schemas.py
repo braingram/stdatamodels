@@ -6,7 +6,7 @@ import pytest
 import yaml
 
 from stdatamodels._fits_support import _get_validators
-from stdatamodels.schema import walk_schema
+from stdatamodels._schema import walk_schema
 
 
 # relative paths to schema directories

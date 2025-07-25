@@ -1,7 +1,7 @@
 import re
 
 import stdatamodels.jwst.datamodels as dm
-from stdatamodels.schema import walk_schema
+from stdatamodels._schema import walk_schema
 
 from . import dmd
 from . import kwd

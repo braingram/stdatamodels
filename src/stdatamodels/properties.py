@@ -9,7 +9,7 @@ from asdf.tags.core import ndarray
 
 from . import util
 from . import validate
-from . import schema as mschema
+from . import _schema as mschema
 
 import logging
 

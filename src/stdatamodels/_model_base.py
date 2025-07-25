@@ -22,7 +22,7 @@ from asdf import schema as asdf_schema
 from . import filetype
 from . import _fits_support as fits_support
 from . import properties
-from . import schema as mschema
+from . import _schema as mschema
 from . import validate
 from .util import convert_fitsrec_to_array_in_tree, get_envar_as_boolean, remove_none_from_tree
 
@@ -836,9 +836,7 @@ class DataModel(properties.ObjectNode):
             the schema where this FITS keyword is used.  Each element
             is a dot-separated path.
         """
-        from . import schema
-
-        return schema.find_fits_keyword(self.schema, keyword)
+        return mschema.find_fits_keyword(self.schema, keyword)
 
     def search_schema(self, substring):
         """
@@ -859,9 +857,7 @@ class DataModel(properties.ObjectNode):
         locations : list of tuples
             The locations within the schema where the element is found.
         """
-        from . import schema
-
-        return schema.search_schema(self.schema, substring)
+        return mschema.search_schema(self.schema, substring)
 
     def __getitem__(self, key):  # numpydoc ignore=RT01
         """Get a metadata value using a dotted name."""

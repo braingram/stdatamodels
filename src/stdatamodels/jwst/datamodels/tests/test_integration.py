@@ -5,7 +5,7 @@ import pytest
 import yaml
 
 from stdatamodels.jwst.datamodels import JwstDataModel
-import stdatamodels.schema
+from stdatamodels._schema import walk_schema
 
 
 DATAMODEL_SCHEMAS = list(
@@ -102,7 +102,7 @@ def test_schema_refs_base(datamodel_schema_file):
         ctx["ids"].add(subschema["id"])
 
     seen_ids = set()
-    stdatamodels.schema.walk_schema(schema, cb, ctx={"ids": seen_ids})
+    walk_schema(schema, cb, ctx={"ids": seen_ids})
 
     if "http://stsci.edu/schemas/jwst_datamodel/core.schema" in seen_ids:
         assert "http://stsci.edu/schemas/jwst_datamodel/referencefile.schema" not in seen_ids

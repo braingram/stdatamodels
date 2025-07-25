@@ -7,7 +7,7 @@ from asdf.exceptions import ValidationError
 from asdf.tags.core import NDArrayType
 from astropy.modeling import models
 
-from stdatamodels.schema import merge_property_trees, build_docstring
+from stdatamodels._schema import merge_property_trees, build_docstring
 from stdatamodels import DataModel
 
 from models import FitsModel, TransformModel, BasicModel, ValidationModel, TableModel

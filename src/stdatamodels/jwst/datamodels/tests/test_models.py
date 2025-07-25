@@ -29,7 +29,7 @@ from stdatamodels.jwst.datamodels import (
 )
 from stdatamodels.jwst import datamodels
 from stdatamodels.jwst.datamodels import _defined_models as defined_models
-from stdatamodels.schema import walk_schema
+from stdatamodels._schema import walk_schema
 from stdatamodels.exceptions import ValidationWarning
 
 ROOT_DIR = Path(__file__).parent / "data"

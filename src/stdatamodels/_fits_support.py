@@ -20,7 +20,7 @@ from asdf import tagged
 from asdf import generic_io
 
 from . import properties
-from . import schema as mschema
+from . import _schema as mschema
 from . import util
 from . import validate
 
