@@ -9,7 +9,7 @@ from asdf.schema import YAML_VALIDATORS
 from asdf.util import HashableDict
 import numpy as np
 
-from .util import convert_fitsrec_to_array_in_tree, remove_none_from_tree
+from ._util import convert_fitsrec_to_array_in_tree, remove_none_from_tree
 from stdatamodels.exceptions import ValidationWarning
 
 

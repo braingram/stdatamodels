@@ -21,7 +21,7 @@ from asdf import generic_io
 
 from . import properties
 from . import _schema as mschema
-from . import util
+from . import _util as util
 from . import validate
 
 import logging

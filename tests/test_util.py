@@ -8,7 +8,7 @@ import numpy as np
 from numpy.testing import assert_array_equal
 from asdf.tags.core import Software, HistoryEntry
 
-from stdatamodels import util
+from stdatamodels import _util as util
 
 
 def test_gentle_asarray():
