@@ -20,7 +20,7 @@ from asdf import AsdfFile
 from asdf import schema as asdf_schema
 
 from . import filetype
-from . import fits_support
+from . import _fits_support as fits_support
 from . import properties
 from . import schema as mschema
 from . import validate

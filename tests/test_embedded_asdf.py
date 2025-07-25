@@ -9,7 +9,7 @@ from astropy.io import fits
 import pytest
 
 from models import FitsModel
-from stdatamodels.fits_support import _NDARRAY_TAG
+from stdatamodels._fits_support import _NDARRAY_TAG
 
 
 def create_fits_model():

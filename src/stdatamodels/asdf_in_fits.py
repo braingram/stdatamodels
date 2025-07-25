@@ -2,7 +2,7 @@ import asdf
 from astropy.io import fits
 import warnings
 
-from . import fits_support
+from . import _fits_support
 
 
 __all__ = ["write", "open"]
@@ -26,7 +26,7 @@ def write(filename, tree, hdulist=None, **kwargs):
     **kwargs
         Additional keyword arguments to pass to :meth:`astropy.io.fits.HDUList.writeto`
     """
-    hdulist = fits_support.to_fits(tree, None, hdulist=hdulist)  # no custom schema
+    hdulist = _fits_support.to_fits(tree, None, hdulist=hdulist)  # no custom schema
     hdulist.writeto(filename, **kwargs)
 
 
@@ -65,7 +65,7 @@ def open(filename_or_hdu, ignore_missing_extensions=False, ignore_unrecognized_t
         )
     is_hdu = isinstance(filename_or_hdu, fits.HDUList)
     hdulist = filename_or_hdu if is_hdu else fits.open(filename_or_hdu)
-    af = fits_support.from_fits_asdf(
+    af = _fits_support.from_fits_asdf(
         hdulist,
         ignore_missing_extensions=ignore_missing_extensions,
         ignore_unrecognized_tag=ignore_unrecognized_tag,

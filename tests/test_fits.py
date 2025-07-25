@@ -7,7 +7,7 @@ from numpy.testing import assert_array_almost_equal, assert_array_equal, assert_
 import asdf.schema
 
 from stdatamodels import DataModel
-from stdatamodels import fits_support
+from stdatamodels import _fits_support as fits_support
 
 from models import FitsModel, PureFitsModel
 

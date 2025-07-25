@@ -5,7 +5,7 @@ import astropy.units
 import pytest
 import yaml
 
-from stdatamodels.fits_support import _get_validators
+from stdatamodels._fits_support import _get_validators
 from stdatamodels.schema import walk_schema
 
 
