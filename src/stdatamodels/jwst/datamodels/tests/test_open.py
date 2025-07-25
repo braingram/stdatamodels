@@ -113,6 +113,7 @@ def test_open_fits():
             assert isinstance(model, JwstDataModel)
 
 
+@pytest.mark.skip(reason="Not supported")
 def test_open_none():
     with datamodels.open() as model:
         assert isinstance(model, JwstDataModel)

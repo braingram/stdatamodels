@@ -84,7 +84,7 @@ def open(init=None, **kwargs):  # noqa: A001
     # all special cases return a model if they match
 
     if init is None:
-        return model_base.JwstDataModel(None, **kwargs)
+        raise Exception("init=None is unsupported")  # noqa: TRY002
 
     elif isinstance(init, model_base.JwstDataModel):
         # Copy the object so it knows not to close here
