@@ -250,7 +250,7 @@ def build_docstring(klass, template="{fits_hdu} {title}"):
     field_info : str
         Information about each schema item associated with a FITS hdu
     """
-    from . import model_base
+    from . import _model_base as model_base
 
     def get_field_info(subschema, path, combiner, info, recurse):
         # Return all schema fields representing fits hdus
