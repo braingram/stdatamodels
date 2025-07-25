@@ -8,7 +8,7 @@ from astropy.io import fits
 from asdf.tags.core import ndarray
 
 from . import _util as util
-from . import validate
+from . import _validate as validate
 from . import _schema as mschema
 
 import logging

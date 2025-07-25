@@ -11,7 +11,7 @@ import pytest
 import numpy as np
 from astropy.io import fits
 from stdatamodels import DataModel
-from stdatamodels.validate import ValidationError
+from stdatamodels._validate import ValidationError
 
 from stdatamodels.jwst.datamodels import (
     JwstDataModel,

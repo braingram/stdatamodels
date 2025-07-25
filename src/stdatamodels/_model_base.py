@@ -23,7 +23,7 @@ from . import filetype
 from . import _fits_support as fits_support
 from . import properties
 from . import _schema as mschema
-from . import validate
+from . import _validate as validate
 from ._util import convert_fitsrec_to_array_in_tree, get_envar_as_boolean, remove_none_from_tree
 
 from ._history import HistoryList
