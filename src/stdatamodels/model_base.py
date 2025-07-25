@@ -26,7 +26,7 @@ from . import schema as mschema
 from . import validate
 from .util import convert_fitsrec_to_array_in_tree, get_envar_as_boolean, remove_none_from_tree
 
-from .history import HistoryList
+from ._history import HistoryList
 
 
 # This minimal schema creates metadata fields that
