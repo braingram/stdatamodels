@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from stdatamodels.dynamicdq import dynamic_mask
+from stdatamodels._dynamicdq import dynamic_mask
 
 
 def _dq(init):

@@ -1,5 +1,5 @@
 from .reference import ReferenceFileModel
-from stdatamodels.dynamicdq import dynamic_mask
+from stdatamodels._dynamicdq import dynamic_mask
 from .dqflags import pixel
 
 __all__ = ["MaskModel"]
