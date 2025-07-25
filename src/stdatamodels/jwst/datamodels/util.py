@@ -137,7 +137,7 @@ def open(init=None, **kwargs):  # noqa: A001
         shape = init.shape
 
     elif isinstance(init, fits.HDUList):
-        hdulist = init
+        raise Exception("Passing HDUList is not supported")  # noqa: TRY002
 
     elif is_association(init) or isinstance(init, Sequence) and not isinstance(init, bytes):
         try:

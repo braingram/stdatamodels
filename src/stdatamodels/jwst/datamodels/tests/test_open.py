@@ -132,6 +132,7 @@ def test_open_illegal():
         datamodels.open(init)
 
 
+@pytest.mark.skip(reason="Not supported")
 def test_open_hdulist(tmp_path):
     hdulist = fits.HDUList()
     primary = fits.PrimaryHDU()
