@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
 
 
-def open(init=None, guess=True, **kwargs):  # noqa: A001
+def open(init=None, **kwargs):  # noqa: A001
     """
     Create a DataModel from a number of different types.
 
@@ -46,9 +46,6 @@ def open(init=None, guess=True, **kwargs):  # noqa: A001
 
         - dict: The object model tree for the data model
 
-    guess : bool
-        Guess as to the model type if the model type is not specifically known from the file.
-        If not guess and the model type is not explicit, raise a TypeError.
     **kwargs
         Additional keyword arguments passed to the DataModel constructor.  Some arguments
         are general, others are file format-specific.  Arguments of note are:
@@ -64,6 +61,7 @@ def open(init=None, guess=True, **kwargs):  # noqa: A001
     DataModel
         A new model instance.
     """
+    guess = True
     from . import model_base
 
     if "memmap" in kwargs:

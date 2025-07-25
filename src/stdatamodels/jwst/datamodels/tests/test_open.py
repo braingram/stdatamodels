@@ -31,6 +31,7 @@ from stdatamodels.exceptions import NoTypeWarning, ValidationWarning
 import asdf
 
 
+@pytest.mark.skip(reason="guess is removed")
 @pytest.mark.parametrize("guess", [True, False])
 def test_guess(guess):
     """Test the guess parameter to the open func"""
