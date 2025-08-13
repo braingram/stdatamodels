@@ -19,7 +19,6 @@ from astropy.wcs import WCS
 
 from . import filetype, fits_support, properties, validate
 from . import schema as mschema
-from .history import HistoryList
 from .util import convert_fitsrec_to_array_in_tree, get_envar_as_boolean, remove_none_from_tree
 
 # This minimal schema creates metadata fields that
@@ -1143,7 +1142,7 @@ class DataModel(properties.ObjectNode):
         history : `HistoryList`
             A list of history entries.
         """
-        return HistoryList(self._asdf)
+        raise Exception("broken")
 
     @history.setter
     def history(self, values):
