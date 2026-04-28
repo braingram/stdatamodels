@@ -73,6 +73,9 @@ def gentle_asarray(a, dtype, allow_extra_columns=False):
     # We can remove this once the issue is resolved in astropy:
     # https://github.com/astropy/astropy/issues/8862
     if isinstance(a, fits.fitsrec.FITS_rec):
+        if any(c.bzero is not None for c in a.columns):
+            if _rebuild_fits_rec_dtype(a) == out_dtype:
+                raise Exception("Taking risky view of fitrec")
         a.dtype = _rebuild_fits_rec_dtype(a)
         in_dtype = a.dtype
 
