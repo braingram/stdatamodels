@@ -40,7 +40,7 @@ class RampModel(JwstDataModel):
         if self.groupdq is None:
             self.groupdq = self.get_default("groupdq")
 
-    def get_default(self, attr):
+    def get_default(self, attr, shape=None):
         """
         Retrieve the schema-defined default value of an attribute.
 
@@ -67,7 +67,7 @@ class RampModel(JwstDataModel):
             shp = (self.data.shape[0],) + self.data.shape[-2:]
             return np.zeros(shp, dtype=np.float32)
 
-        return super().get_default(attr)
+        return super().get_default(attr, shape=shape)
 
 
 class SuperstripeRampModel(JwstDataModel):
@@ -103,7 +103,7 @@ class SuperstripeRampModel(JwstDataModel):
         if self.groupdq is None:
             self.groupdq = self.get_default("groupdq")
 
-    def get_default(self, attr):
+    def get_default(self, attr, shape=None):
         """
         Retrieve the schema-defined default value of an attribute.
 
@@ -144,4 +144,4 @@ class SuperstripeRampModel(JwstDataModel):
             if attr == "zeroframe":
                 return np.zeros((self.data.shape[0], *image_shape), dtype=np.float32)
 
-        return super().get_default(attr)
+        return super().get_default(attr, shape=shape)

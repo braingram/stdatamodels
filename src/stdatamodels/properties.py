@@ -195,7 +195,7 @@ def _get_schema_type(schema):
     return schema_type
 
 
-def _make_default_array(attr, schema, ctx):
+def _make_default_array(attr, schema, ctx, shape=None):
     dtype = schema.get("datatype")
     if dtype is not None:
         # asdf_datatype_to_numpy_dtype does not handle "ndim" or "max_ndim",
@@ -211,13 +211,14 @@ def _make_default_array(attr, schema, ctx):
     primary_array_name = ctx.get_primary_array_name()
 
     if attr == primary_array_name:
-        if ctx.shape is not None:
-            shape = ctx.shape
-            _validate_primary_shape(schema, shape)
-        elif ndim is not None:
-            shape = tuple([0] * ndim)
-        else:
-            shape = (0,)
+        if shape is None:
+            if ctx.shape is not None:
+                shape = ctx.shape
+                _validate_primary_shape(schema, shape)
+            elif ndim is not None:
+                shape = tuple([0] * ndim)
+            else:
+                shape = (0,)
     else:
         if dtype.names is not None:
             if ndim is None:
@@ -282,9 +283,9 @@ def _validate_primary_shape(schema, shape):
         raise ValueError(msg)
 
 
-def _make_default(attr, schema, ctx):
+def _make_default(attr, schema, ctx, shape=None):
     if "max_ndim" in schema or "ndim" in schema or "datatype" in schema:
-        return _make_default_array(attr, schema, ctx)
+        return _make_default_array(attr, schema, ctx, shape=shape)
     elif "default" in schema:
         return schema["default"]
     else:
@@ -474,7 +475,7 @@ class ObjectNode(Node):
                 val = getattr(val, field)
             yield (key, val)
 
-    def get_default(self, attr):
+    def get_default(self, attr, shape=None):
         """
         Retrieve the schema-defined default value of an attribute.
 
@@ -497,7 +498,7 @@ class ObjectNode(Node):
         subschema = _get_schema_for_property(self._schema, attr)
         if not subschema:
             raise AttributeError(f'{self} has no attribute "{attr}"')
-        return _make_default(attr, subschema, self._ctx)
+        return _make_default(attr, subschema, self._ctx, shape=shape)
 
     def get_dtype(self, attr):
         """

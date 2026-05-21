@@ -176,10 +176,9 @@ class DataModel(properties.ObjectNode):
         # Determine what kind of input we have (init) and execute the
         # proper code to initialize the model
         self._file_references = []
-        self._shape = None
         is_array = False
-        is_shape = False
-        shape = None
+        is_shape = False  # where are you used?
+        shape = None  # where are you used?
 
         if init is None:
             asdffile = AsdfFile(ignore_unrecognized_tag=ignore_unrecognized_tag)
@@ -266,7 +265,6 @@ class DataModel(properties.ObjectNode):
             raise TypeError(f"Can't initialize datamodel using {str(type(init))}")
 
         # Initialize object fields as determined from the code above
-        self._shape = shape
         self._instance = asdffile.tree
         self._asdf = asdffile
 
@@ -300,7 +298,7 @@ class DataModel(properties.ObjectNode):
                 )
 
             # Initialize the primary array to the given shape with default value.
-            setattr(self, primary_array_name, self.get_default(primary_array_name))
+            setattr(self, primary_array_name, self.get_default(primary_array_name, shape=shape))
 
         # initialize arrays from keyword arguments when they are present
         for attr, value in kwargs.items():
@@ -462,7 +460,6 @@ class DataModel(properties.ObjectNode):
                 file_reference.increment()
                 target._file_references.append(file_reference)
 
-        target._shape = source._shape
         target._no_asdf_extension = source._no_asdf_extension
 
     def copy(self, memo=None):
@@ -679,7 +676,7 @@ class DataModel(properties.ObjectNode):
         if primary_array_name and getattr(self, primary_array_name, None) is not None:
             primary_array = getattr(self, primary_array_name)
             return primary_array.shape
-        return self._shape
+        return None
 
     def __setattr__(self, attr, value):
         if attr in frozenset(("shape", "history", "_extra_fits", "schema")):

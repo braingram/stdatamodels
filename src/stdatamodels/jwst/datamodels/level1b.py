@@ -63,7 +63,7 @@ class Level1bModel(JwstDataModel):
     def _migrate_hdulist(self, hdulist):
         return _migrate_moving_target_table(hdulist)
 
-    def get_default(self, attr):
+    def get_default(self, attr, shape=None):
         """
         Retrieve the schema-defined default value of an attribute.
 
@@ -89,4 +89,4 @@ class Level1bModel(JwstDataModel):
             shp = (self.data.shape[0],) + self.data.shape[-2:]
             return np.zeros(shp, dtype=np.float32)
 
-        return super().get_default(attr)
+        return super().get_default(attr, shape=shape)
