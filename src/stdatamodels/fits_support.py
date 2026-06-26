@@ -939,18 +939,8 @@ def from_fits_hdu(hdu, schema):
     """
     data = hdu.data
 
-    # Save the column listeners for possible restoration
-    if hasattr(data, "_coldefs"):
-        listeners = data._coldefs._listeners
-    else:
-        listeners = None
-
     # Cast array to type mentioned in schema
     data = properties._cast(data, schema)
-
-    # Casting a table loses the column listeners, so restore them
-    if listeners is not None:
-        data._coldefs._listeners = listeners
 
     return data
 
