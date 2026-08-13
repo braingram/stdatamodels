@@ -18,7 +18,7 @@ from astropy import time
 from astropy.io import fits
 from astropy.utils.exceptions import AstropyWarning
 
-from . import properties, util, validate
+from . import _asdf, properties, util, validate
 from . import schema as mschema
 
 log = logging.getLogger(__name__)
@@ -609,7 +609,8 @@ def _create_asdf_hdu(tree):
     # in the current schemas. These will be loaded as FITS_rec instances but
     # not linked back (and safely converted) on write if they are removed
     # from the schema.
-    asdf.AsdfFile(util.convert_fitsrec_to_array_in_tree(tree)).write_to(buffer)
+    with _asdf.limit_extensions():
+        asdf.AsdfFile(util.convert_fitsrec_to_array_in_tree(tree)).write_to(buffer)
     buffer.seek(0)
 
     data = np.array(buffer.getbuffer(), dtype=np.uint8)[None, :]

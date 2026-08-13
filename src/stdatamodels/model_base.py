@@ -16,7 +16,7 @@ from asdf.tags.core import NDArrayType
 from astropy.io import fits
 from astropy.time import Time
 
-from . import filetype, fits_support, properties, validate
+from . import _asdf, filetype, fits_support, properties, validate
 from . import schema as mschema
 from .history import HistoryList
 from .util import convert_fitsrec_to_array_in_tree, get_envar_as_boolean, remove_none_from_tree
@@ -641,9 +641,10 @@ class DataModel(properties.ObjectNode):
         # Don't AsdfFile(tree) as this will cause a second validation of the tree
         # instead open an empty tree, then assign to the hidden '_tree'
         # This can be updated when asdf 4.0 is the minimum version.
-        asdffile = AsdfFile()
-        asdffile._tree = tree
-        asdffile.write_to(init, *args, **kwargs)
+        with _asdf.limit_extensions():
+            asdffile = AsdfFile()
+            asdffile._tree = tree
+            asdffile.write_to(init, *args, **kwargs)
 
     def to_fits(self, init, *args, **kwargs):
         """
