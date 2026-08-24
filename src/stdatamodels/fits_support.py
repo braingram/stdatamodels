@@ -258,6 +258,9 @@ def _fits_array_writer(fits_context, validator, _, instance, schema):
     if key in fits_context:
         hdu = fits_context[key]
         hdu.data = instance
+        # TODO if we're setting HDU data, give the HDU at least version 1 to match current regtests
+        if hdu.version is None:
+            hdu.version = 1
     else:
         # TODO if we're making an HDU, give it version 1 to match current regtests
         hdu = HDU(hdu_name, data=instance, version=hdu_ver or 1)
