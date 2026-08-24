@@ -102,18 +102,6 @@ def _get_hdu_name(schema):
     return hdu_name
 
 
-def _get_hdu_type(hdu_name, schema=None, value=None):
-    if hdu_name in (0, "PRIMARY"):
-        return fits.PrimaryHDU
-    if schema is not None and "dataype" in schema:
-        if ndarray.asdf_datatype_to_numpy_dtype(schema["datatype"]).fields is not None:
-            return fits.BinTableHDU
-    if value is not None:
-        if hasattr(value, "dtype") and value.dtype.names is not None:
-            return fits.BinTableHDU
-    return fits.ImageHDU
-
-
 def _get_hdu_pair(hdu_name, index=None):
     if hdu_name == 0:
         return ("PRIMARY", 0)
@@ -305,14 +293,6 @@ def _fits_type(fits_context, validator, items, instance, schema):
     return asdf_schema.YAML_VALIDATORS["type"](validator, items, instance, schema)
 
 
-def _name_to_key(name, version=None):
-    return name.lower(), version
-
-
-def _hdu_to_key(hdu):
-    return _name_to_key(hdu.name, hdu.header.get("EXTVER"))
-
-
 class HDU:
     @classmethod
     def from_hdu(cls, hdu):
@@ -324,22 +304,14 @@ class HDU:
         self.data = data
         self.header = fits.Header(header or [])
         self.version = version
-        self._hdu_type = None
 
     @property
     def hdu_type(self):
-        if self._hdu_type:
-            return self._hdu_type
         if self.name.lower() == "primary":
             return fits.PrimaryHDU
         if hasattr(self.data, "dtype") and self.data.dtype.names is not None:
             return fits.BinTableHDU
         return fits.ImageHDU
-
-    @hdu_type.setter
-    def hdu_type(self, hdu_type):
-        # TODO do we actually ever need this setter or is data sufficient?
-        self._type = hdu_type
 
     def to_hdu(self):
         hdu_type = self.hdu_type
