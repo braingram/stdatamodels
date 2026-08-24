@@ -398,7 +398,6 @@ class FitsContext:
 
     def to_hdulist(self, tree):
         # convert to hdulist
-        # TODO does that avoid copies?
         hdulist = fits.HDUList([h.to_hdu() for h in self._hdus])
 
         # add hash
@@ -471,6 +470,9 @@ def _save_from_schema(fits_context, tree, schema):
     # This actually kicks off the saving
     validator.validate(tree, _schema=schema)
 
+    # Rather than search all hdus for every array pre-index hdu data ids
+    hdu_data_ids = {id(hdu.data): hdu for hdu in fits_context._hdus if hdu.data is not None}
+
     # Now link extensions to items in the tree
     def callback(node):
         if hdu_index := fits_context.extension_array_links.get(id(node)):
@@ -481,10 +483,8 @@ def _save_from_schema(fits_context, tree, schema):
             # with ndarray-1.0.0 tagged objects with special source values
             # that represent links to the surrounding FITS file.
             # This is important for general ASDF-in-FITS support
-            # TODO this is bad...
-            for hdu in fits_context._hdus:
-                if hdu.data is not None and node is hdu.data:
-                    return _create_tagged_dict_for_fits_array(hdu)
+            if hdu := hdu_data_ids.get(id(node)):
+                return _create_tagged_dict_for_fits_array(hdu)
         return node
 
     tree = treeutil.walk_and_modify(tree, callback)
