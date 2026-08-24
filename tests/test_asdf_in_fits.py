@@ -13,6 +13,7 @@ def test_write_linked(tmp_path):
     hdulist = fits.HDUList()
     sci = np.arange(512, dtype=float)
     dq = np.arange(512, dtype=float) + 1
+    hdulist.append(fits.PrimaryHDU())
     hdulist.append(fits.ImageHDU(sci, name="SCI"))
     hdulist.append(fits.ImageHDU(dq, name="DQ"))
 
@@ -42,7 +43,7 @@ def test_write_linked(tmp_path):
 
     with fits.open(fn) as read_hdulist:
         # hdu should have sci, dq, and ASDF
-        assert len(read_hdulist) == 3
+        assert len(read_hdulist) == 4
         # check asdf extension has no blocks by looking for bytes
         # after the end of the yaml document for the tree
         bs = read_hdulist["ASDF"].data["ASDF_METADATA"].tobytes()
