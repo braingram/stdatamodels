@@ -108,3 +108,17 @@ def test_fits_hdu(schema_id):
             # PRIMARY hdu can't store arrays so check for array keywords
             for array_keyword in ("ndim", "max_ndim", "datatype"):
                 assert array_keyword not in schema
+
+
+@pytest.mark.parametrize("schema_id", SCHEMA_IDS)
+def test_no_nested_items_for_fits_mapping(schema_id):
+    schema = asdf.schema.load_schema(schema_id)
+
+    def callback(schema, path, combiner, ctx, recurse):
+        if not isinstance(schema, dict):
+            return
+        if not ("fits_hdu" in schema or "fits_keyword" in schema):
+            return
+        assert path.count("items") < 2, f"Schema {schema_id} contains nested items: {path}"
+
+    walk_schema(schema, callback, {})
