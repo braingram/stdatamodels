@@ -1,3 +1,4 @@
+import io
 import re
 
 import asdf.schema
@@ -195,6 +196,15 @@ def test_non_contiguous_array(tmp_path):
     with FitsModel(file_path) as dm:
         assert_array_equal(dm.data, data)
         assert_array_equal(dm.err, err)
+
+    # also verify that the ASDF extension did not duplicate the data
+    # and instead references the expected extensions
+    with fits.open(file_path, memmap=False) as hdulist:
+        asdf_bytes = hdulist["ASDF"].data["ASDF_METADATA"].tobytes()
+        tree = asdf.util.load_yaml(io.BytesIO(asdf_bytes))
+
+    assert tree["data"]["source"] == "fits:SCI,1"
+    assert tree["err"]["source"] == "fits:ERR,1"
 
 
 def test_table_with_metadata(tmp_path):
