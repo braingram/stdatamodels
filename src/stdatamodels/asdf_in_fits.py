@@ -1,4 +1,5 @@
 import asdf
+import numpy as np
 from astropy.io import fits
 
 from . import fits_support
@@ -30,7 +31,30 @@ def to_hdulist(tree, hdulist=None):
     `astropy.io.fits.HDUList` :
         HDUList with added ASDF data.
     """
-    return fits_support.to_fits(tree, None, hdulist=hdulist)  # no custom schema
+    if hdulist is None:
+        hdulist = fits.HDUList([fits.PrimaryHDU()])
+    else:
+        hdu_data_ids = {
+            id(hdu.data): (i, hdu) for i, hdu in enumerate(hdulist) if hdu.data is not None
+        }
+
+        def callback(node):
+            if (
+                isinstance(node, (np.ndarray, asdf.tags.core.NDArrayType))
+                and id(node) in hdu_data_ids
+            ):
+                hdu_index, hdu = hdu_data_ids[id(node)]
+                return fits_support._create_tagged_dict_for_fits_array(hdu, hdu_index)
+            return node
+
+        tree = asdf.treeutil.walk_and_modify(tree, callback)
+
+    # add the asdf extension
+    if fits_support._ASDF_EXTENSION_NAME in hdulist:
+        del hdulist[fits_support._ASDF_EXTENSION_NAME]
+
+    hdulist.append(fits_support._create_asdf_hdu(tree))
+    return hdulist
 
 
 def write(filename, tree, hdulist=None, **kwargs):
