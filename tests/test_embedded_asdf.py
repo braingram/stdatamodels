@@ -8,7 +8,7 @@ from asdf.constants import ASDF_MAGIC
 from astropy.io import fits
 from numpy.testing import assert_array_equal
 
-from stdatamodels.fits_support import _NDARRAY_TAG
+from stdatamodels._fits_support._asdf import _NDARRAY_TAG
 
 from .models import FitsModel
 

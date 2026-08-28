@@ -2,7 +2,12 @@ import asdf
 import numpy as np
 from astropy.io import fits
 
-from . import fits_support
+from stdatamodels import fits_support
+from stdatamodels._fits_support._asdf import (
+    _ASDF_EXTENSION_NAME,
+    _create_asdf_hdu,
+    _create_tagged_dict_for_fits_array,
+)
 
 __all__ = ["open", "to_hdulist", "write"]
 
@@ -44,16 +49,16 @@ def to_hdulist(tree, hdulist=None):
                 and id(node) in hdu_data_ids
             ):
                 hdu_index, hdu = hdu_data_ids[id(node)]
-                return fits_support._create_tagged_dict_for_fits_array(hdu, hdu_index)
+                return _create_tagged_dict_for_fits_array(hdu, hdu_index)
             return node
 
         tree = asdf.treeutil.walk_and_modify(tree, callback)
 
     # add the asdf extension
-    if fits_support._ASDF_EXTENSION_NAME in hdulist:
-        del hdulist[fits_support._ASDF_EXTENSION_NAME]
+    if _ASDF_EXTENSION_NAME in hdulist:
+        del hdulist[_ASDF_EXTENSION_NAME]
 
-    hdulist.append(fits_support._create_asdf_hdu(tree))
+    hdulist.append(_create_asdf_hdu(tree))
     return hdulist
 
 
