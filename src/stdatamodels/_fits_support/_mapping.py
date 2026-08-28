@@ -33,8 +33,9 @@ def _set_tree(tree, path, value):
     node[path[-1]] = value
 
 
-# TODO these assume no nested items (this is currently true, should make a test)
 def _set_tree_data(tree, path, data_by_ver):
+    # This assumes only 1 "items" path component. There is a unit
+    # test to confirm that fits mappings are only ever 1 "items" deep.
     # shortcut non-items paths
     if "items" not in path:
         return _set_tree(tree, path, data_by_ver.popitem()[-1])
@@ -174,14 +175,15 @@ class FITSASDFMapping:
                 # check for all section headers
                 # Do this per-hdu.name instead of per-file
                 # that way multiple SCI extensions that list coordinate information will
-                # all have section headers
-                # TODO avoid the while here, it's needed to catch nested section header comments
+                # all have section headers.
+                # Search for parent titles as well
                 # eg: meta.ref_file defines a title used by meta.ref_file.foo.name
+                # TODO perhaps there is a more efficient way to store these?
                 if header_key not in per_hdu_section_titles:
                     per_hdu_section_titles[header_key] = self.section_titles.copy()
                 section_titles = per_hdu_section_titles[header_key]
-                clip = -1
-                while section_key := ".".join(item.path[:clip]):
+                for i in range(1, len(item.path) - 1):
+                    section_key = ".".join(item.path[:i])
                     if section_title := section_titles.pop(section_key, None):
                         headers[header_key].extend(
                             [
@@ -190,7 +192,6 @@ class FITSASDFMapping:
                                 (" ", ""),
                             ]
                         )
-                    clip -= 1
 
                 # check for a header comment
                 headers[header_key].append(
@@ -227,8 +228,6 @@ class FITSASDFMapping:
                 "data": hdu.data,
                 "header": {card.keyword.upper(): card.value for card in hdu.header.cards},
             }
-
-        # TODO is it better to use the graph or entries here?
 
         for entry in self.entries:
             name = entry.name.upper()
