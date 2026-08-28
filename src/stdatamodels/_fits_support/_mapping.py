@@ -137,7 +137,7 @@ class FITSASDFMapping:
         graph = _entries_to_graph(entries)
         return cls(entries, graph, section_titles)
 
-    def to_hdulist(self, model):
+    def to_hdulist(self, model, extra):
         per_hdu_section_titles = {}
 
         hdus = {("PRIMARY", 1): fits.PrimaryHDU()}
@@ -202,6 +202,24 @@ class FITSASDFMapping:
                     )
                 )
 
+        # now map extra.... TODO should this be outside?
+        for hdu_name, hdu_info in extra.items():
+            # hdu_info = {"data": ..., "header": [(k, v, comment)]}
+            if "data" in hdu_info:
+                data = hdu_info["data"]
+                # FIXME case NOT handled here
+                hdus[(hdu_name, 1)]
+                hdu_type = fits.BinTableHDU if data.dtype.fields else fits.ImageHDU
+                # FIXME is 1 always right here?
+                hdu = hdu_type(name=hdu_name, data=data, ver=1)
+                hdus[(hdu_name, 1)] = hdu
+            if "header" in hdu_info:
+                # FIXME case NOT handled here
+                header_key = (hdu_name, 1)
+                if header_key not in headers:
+                    headers[header_key] = []
+                headers[header_key].extend(hdu_info["header"])
+
         # apply headers
         for key in headers:
             if key in hdus:
@@ -217,6 +235,7 @@ class FITSASDFMapping:
     def from_hdulist(self, hdulist, tree=None):
         tree = tree or {}
         # pre-index hdulist and headers
+        # this also gets returned to track what was not mapped
         hdus = {}
         for hdu in hdulist:
             name = hdu.name.upper()
@@ -226,7 +245,10 @@ class FITSASDFMapping:
             assert ver not in hdus[name]
             hdus[name][ver] = {
                 "data": hdu.data,
-                "header": {card.keyword.upper(): card.value for card in hdu.header.cards},
+                # FIXME this loses comments
+                "header": {
+                    card.keyword.upper(): (card.value, card.comment) for card in hdu.header.cards
+                },
             }
 
         for entry in self.entries:
@@ -238,7 +260,14 @@ class FITSASDFMapping:
             matching_hdus = hdus[name]
 
             if entry.mapping_type == MappingType.ARRAY:
-                _set_tree_data(tree, entry.path, {k: v["data"] for k, v in matching_hdus.items()})
+                # pop data for these hdus
+                data = {}
+                for ver, hdu in matching_hdus.items():
+                    if hdu["data"] is not None:
+                        data[ver] = hdu["data"]
+                        # set data to None to mark it as mapped
+                        hdu["data"] = None
+                _set_tree_data(tree, entry.path, data)
                 continue
 
             # keyword
@@ -246,9 +275,11 @@ class FITSASDFMapping:
             values_by_ver = {}
             for ver, hdu in matching_hdus.items():
                 if keyword in hdu["header"]:
-                    values_by_ver[ver] = hdu["header"][keyword]
+                    values_by_ver[ver] = hdu["header"].pop(keyword)[0]
             if not values_by_ver:
                 # nothing to set
                 continue
             _set_tree_data(tree, entry.path, values_by_ver)
-        return tree
+        # FIXME extra isn't in quite the same format
+        # headers are key: (value, comment) not (key, value, comment)
+        return tree, hdus
