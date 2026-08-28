@@ -238,6 +238,7 @@ class FITSASDFMapping:
         # this also gets returned to track what was not mapped
         hdus = {}
         for hdu in hdulist:
+            # TODO case NOT handled
             name = hdu.name.upper()
             if name not in hdus:
                 hdus[name] = {}
@@ -245,7 +246,6 @@ class FITSASDFMapping:
             assert ver not in hdus[name]
             hdus[name][ver] = {
                 "data": hdu.data,
-                # FIXME this loses comments
                 "header": {
                     card.keyword.upper(): (card.value, card.comment) for card in hdu.header.cards
                 },
