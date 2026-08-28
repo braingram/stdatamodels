@@ -33,8 +33,7 @@ def _set_tree(tree, path, value):
     node[path[-1]] = value
 
 
-# TODO these assume no nested items (which I think is a safe assumption)
-# TODO this also assumes equal contents (all slits have "data")
+# TODO these assume no nested items (this is currently true, should make a test)
 def _set_tree_data(tree, path, data_by_ver):
     # shortcut non-items paths
     if "items" not in path:
@@ -51,15 +50,15 @@ def _set_tree_data(tree, path, data_by_ver):
         node = node[key]
 
     # make list
+    max_length = max(data_by_ver.keys())
     if list_key not in node:
-        # FIXME this assumes all per-version data is of consistent length
-        node[list_key] = [{}] * max(data_by_ver.keys())
+        node[list_key] = [{}] * max_length
+    elif len(node[list_key]) < max_length:
+        node[list_key].extend([{}] * (max_length - len(node[list_key])))
 
-    for i, subnode in enumerate(node[list_key]):
-        ver = i + 1
-        if ver not in data_by_ver:
-            continue
-        _set_tree_data(subnode, item_keys, {ver: data_by_ver[ver]})
+    for ver, data in data_by_ver.items():
+        # ver here is 1-based so subtract 1 for the node index
+        _set_tree_data(node[list_key][ver - 1], item_keys, {ver: data})
 
 
 def _entries_to_graph(index):
@@ -112,8 +111,8 @@ class FITSASDFMapping:
         entries = []
         walk_schema(schema, callback, entries)
 
-        # order the entriesso that:
-        # - hdus appear in expected order TODO TBD order needs to be determined
+        # order the entries so that:
+        # - hdus appear in expected order
         # - keyword entries for an hdu occur after any array entry
 
         def index_sort(entry):
