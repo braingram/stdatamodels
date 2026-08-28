@@ -6,7 +6,8 @@ import pytest
 from astropy.io import fits
 from numpy.testing import assert_allclose, assert_array_equal
 
-from stdatamodels import DataModel, fits_support
+from stdatamodels import DataModel
+from stdatamodels._fits_support._fits import is_builtin_fits_keyword
 from stdatamodels._fits_support._schema import _get_short_doc
 
 from .models import FitsModel, PureFitsModel
@@ -476,7 +477,7 @@ def test_from_hdulist(tmp_path):
     ],
 )
 def test_is_builtin_fits_keyword(keyword, result):
-    assert fits_support.is_builtin_fits_keyword(keyword) is result
+    assert is_builtin_fits_keyword(keyword) is result
 
 
 def test_no_asdf_extension(tmp_path):

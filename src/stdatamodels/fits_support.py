@@ -1,9 +1,7 @@
 import datetime
-import hashlib
 import io
 import logging
 import re
-import warnings
 import weakref
 from functools import partial
 
@@ -16,7 +14,6 @@ from asdf.tags.core import HistoryEntry, NDArrayType, ndarray
 from asdf.util import HashableDict, uri_match
 from astropy import time
 from astropy.io import fits
-from astropy.utils.exceptions import AstropyWarning
 
 from stdatamodels import properties, util, validate
 from stdatamodels import schema as mschema
@@ -26,74 +23,13 @@ from stdatamodels._fits_support._asdf import (
     _create_asdf_hdu,
     _create_tagged_dict_for_fits_array,
 )
+from stdatamodels._fits_support._fits import FITS_HASH_KEY, fits_hash, is_builtin_fits_keyword
 from stdatamodels._fits_support._schema import _get_short_doc
 
 log = logging.getLogger(__name__)
 
 
 __all__ = ["from_fits", "get_hdu", "is_builtin_fits_keyword", "to_fits"]
-
-
-_builtin_regexes = [
-    "",
-    "NAXIS[0-9]{0,3}",
-    "BITPIX",
-    "XTENSION",
-    "PCOUNT",
-    "GCOUNT",
-    "EXTEND",
-    "BSCALE",
-    "BZERO",
-    "BLANK",
-    "DATAMAX",
-    "DATAMIN",
-    "EXTNAME",
-    "EXTVER",
-    "EXTLEVEL",
-    "GROUPS",
-    "PYTPE[0-9]",
-    "PSCAL[0-9]",
-    "PZERO[0-9]",
-    "SIMPLE",
-    "TFIELDS",
-    "TBCOL[0-9]{1,3}",
-    "TDIM[0-9]{1,3}",
-    "TFORM[0-9]{1,3}",
-    "TTYPE[0-9]{1,3}",
-    "TUNIT[0-9]{1,3}",
-    "TSCAL[0-9]{1,3}",
-    "TZERO[0-9]{1,3}",
-    "TNULL[0-9]{1,3}",
-    "TDISP[0-9]{1,3}",
-    "HISTORY",
-]
-
-
-_builtin_regex = re.compile("|".join(f"(^{x}$)" for x in _builtin_regexes))
-
-
-def is_builtin_fits_keyword(key):
-    """
-    Check if key is a FITS builtin.
-
-    Builtins are those managed by ``astropy.io.fits``, and we don't
-    want to propagate those through the `_extra_fits` mechanism.
-
-    Parameters
-    ----------
-    key : str
-        The keyword to check.
-
-    Returns
-    -------
-    bool
-        `True` if the keyword is a built-in FITS keyword.
-    """
-    return _builtin_regex.match(key) is not None
-
-
-# Key where the FITS hash is stored in the ASDF tree
-FITS_HASH_KEY = "_fits_hash"
 
 
 def _get_hdu_name(schema):
@@ -967,29 +903,3 @@ def _can_skip_fits_update(hdulist, asdf_struct, context):
 
     # If all else fails, run fits_update
     return False
-
-
-def fits_hash(hdulist):
-    """
-    Calculate a hash based on all HDU headers.
-
-    Uses basic SHA-256 hash to calculate.
-
-    Parameters
-    ----------
-    hdulist : astropy.fits.HDUList
-        The FITS structure.
-
-    Returns
-    -------
-    fits_hash : str
-        The hash of all HDU headers.
-    """
-    fits_hash = hashlib.sha256()
-
-    # Ignore FITS header warnings, such as "Card is too long".
-    # Such issues are inconsequential to hash calculation.
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", AstropyWarning)
-        fits_hash.update("".join(str(hdu.header) for hdu in hdulist if hdu.name != "ASDF").encode())
-    return fits_hash.hexdigest()
