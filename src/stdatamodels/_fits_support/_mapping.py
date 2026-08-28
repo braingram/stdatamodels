@@ -4,7 +4,7 @@ from enum import Enum, unique
 
 from astropy.io import fits
 
-from stdatamodels import fits_support
+from stdatamodels._fits_support._schema import _get_short_doc
 from stdatamodels.schema import walk_schema
 
 DEFAULT_HDU_ORDER = ["PRIMARY", "SCI", "DQ", "ERR"]
@@ -197,7 +197,7 @@ class FITSASDFMapping:
                     (
                         item.subschema["fits_keyword"],
                         node,
-                        fits_support._get_short_doc(item.subschema),
+                        _get_short_doc(item.subschema),
                     )
                 )
 

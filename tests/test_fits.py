@@ -7,6 +7,7 @@ from astropy.io import fits
 from numpy.testing import assert_allclose, assert_array_equal
 
 from stdatamodels import DataModel, fits_support
+from stdatamodels._fits_support._schema import _get_short_doc
 
 from .models import FitsModel, PureFitsModel
 
@@ -419,14 +420,14 @@ def test_metadata_from_fits(tmp_path):
 
 
 def test_get_short_doc():
-    assert fits_support._get_short_doc({}) == ""
-    assert fits_support._get_short_doc({"title": "Some schema title."}) == "Some schema title."
+    assert _get_short_doc({}) == ""
+    assert _get_short_doc({"title": "Some schema title."}) == "Some schema title."
     assert (
-        fits_support._get_short_doc({"title": "Some schema title.\nWhoops, another line."})
+        _get_short_doc({"title": "Some schema title.\nWhoops, another line."})
         == "Some schema title."
     )
     assert (
-        fits_support._get_short_doc(
+        _get_short_doc(
             {
                 "title": "Some schema title.",
                 "description": "Some schema description.",
@@ -435,7 +436,7 @@ def test_get_short_doc():
         == "Some schema title."
     )
     assert (
-        fits_support._get_short_doc(
+        _get_short_doc(
             {
                 "description": "Some schema description.",
             }
@@ -443,7 +444,7 @@ def test_get_short_doc():
         == "Some schema description."
     )
     assert (
-        fits_support._get_short_doc(
+        _get_short_doc(
             {
                 "description": "Some schema description.\nWhoops, another line.",
             }

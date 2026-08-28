@@ -26,6 +26,7 @@ from stdatamodels._fits_support._asdf import (
     _create_asdf_hdu,
     _create_tagged_dict_for_fits_array,
 )
+from stdatamodels._fits_support._schema import _get_short_doc
 
 log = logging.getLogger(__name__)
 
@@ -992,14 +993,3 @@ def fits_hash(hdulist):
         warnings.simplefilter("ignore", AstropyWarning)
         fits_hash.update("".join(str(hdu.header) for hdu in hdulist if hdu.name != "ASDF").encode())
     return fits_hash.hexdigest()
-
-
-def _get_short_doc(schema):
-    title = schema.get("title", None)
-    description = schema.get("description", None)
-    if description is None:
-        description = title or ""
-    else:
-        if title is not None:
-            description = title + "\n\n" + description
-    return description.partition("\n")[0]
