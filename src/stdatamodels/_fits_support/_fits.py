@@ -153,9 +153,8 @@ class HDU:
             hdu.name, data=hdu.data, header=hdu.header.cards, version=hdu.header.get("EXTVER")
         )
 
-    def __init__(self, name, *, index=None, data=None, header=None, version=None):
+    def __init__(self, name, *, data=None, header=None, version=None):
         self.name = name
-        self.index = index
         self.data = data
         self.header = Header(header or [])
         self.version = version
@@ -177,7 +176,7 @@ class HDU:
         return hdu_type(name=self.name, data=self.data, ver=self.version, header=header)
 
 
-class FitsFile:
+class FITSFile:
     @classmethod
     def from_astropy(cls, hdulist):
         return cls([HDU.from_astropy(hdu) for hdu in hdulist])
@@ -211,6 +210,9 @@ class FitsFile:
             except StopIteration:
                 raise KeyError(f"Unknown HDU version {version} for {name}") from None
         return self._hdus[self._index[lowercase_name][version]]
+
+    def by_version(self, name):
+        return {version: self._hdus[index] for version, index in self._index[name.lower()].items()}
 
     def __contains__(self, key):
         try:

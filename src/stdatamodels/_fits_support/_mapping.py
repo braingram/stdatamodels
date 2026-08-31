@@ -2,8 +2,7 @@ from collections import deque
 from dataclasses import dataclass
 from enum import Enum, unique
 
-from astropy.io import fits
-
+from stdatamodels._fits_support._fits import HDU, Card, FITSFile
 from stdatamodels._fits_support._schema import _get_short_doc
 from stdatamodels.schema import walk_schema
 
@@ -137,41 +136,46 @@ class FITSASDFMapping:
         graph = _entries_to_graph(entries)
         return cls(entries, graph, section_titles)
 
-    def to_hdulist(self, model, extra):
+    def to_fitsfile(self, tree, fitsfile=None):
         per_hdu_section_titles = {}
 
-        hdus = {("PRIMARY", 1): fits.PrimaryHDU()}
-        headers = {}
-        queue = deque([(model.instance, self.graph, 1)])
+        if fitsfile is None:
+            fitsfile = FITSFile()
+
+        # queue items = (tree, subgraph, version)
+        queue = deque([(tree, self.graph, 1)])
+
         while queue:
             node, item, ver = queue.popleft()
-            if isinstance(item, dict):  # populate queue
+            if isinstance(item, dict):  # subgraph, populate queue
                 if isinstance(node, dict):
                     for k, v in item.items():
-                        if k not in node:  # nothing to do
+                        if k not in node:
                             continue
                         queue.append((node[k], v, ver))
                 else:
-                    assert isinstance(node, list)
-                    assert len(item) == 1 and "items" in item
                     subitem = item["items"]
                     for i, subnode in enumerate(node):
                         queue.append((subnode, subitem, i + 1))
             else:
-                # process entry/item
+                key = (item.name, ver)
+                if key in fitsfile:
+                    hdu = fitsfile[key]
+                else:
+                    hdu = HDU(item.name, version=ver)
+                    fitsfile.append(hdu)
 
-                # array
+                # process item
                 if item.mapping_type == MappingType.ARRAY:
-                    hdu_type = fits.BinTableHDU if node.dtype.fields else fits.ImageHDU
-                    hdu = hdu_type(name=item.name, data=node, ver=ver)
-                    hdus[(hdu.name, hdu.ver)] = hdu
+                    hdu.data = node
                     continue
 
-                # keyword, queue them for later
-                header_key = (item.name, ver)
-                if header_key not in headers:
-                    headers[header_key] = []
+                # keyword
+                keyword = item.subschema["fits_keyword"]
+                if keyword in hdu.header:
+                    continue
 
+                # first add section headers
                 # check for all section headers
                 # Do this per-hdu.name instead of per-file
                 # that way multiple SCI extensions that list coordinate information will
@@ -179,107 +183,67 @@ class FITSASDFMapping:
                 # Search for parent titles as well
                 # eg: meta.ref_file defines a title used by meta.ref_file.foo.name
                 # TODO perhaps there is a more efficient way to store these?
-                if header_key not in per_hdu_section_titles:
-                    per_hdu_section_titles[header_key] = self.section_titles.copy()
-                section_titles = per_hdu_section_titles[header_key]
-                for i in range(1, len(item.path) - 1):
+                if key not in per_hdu_section_titles:
+                    per_hdu_section_titles[key] = self.section_titles.copy()
+                section_titles = per_hdu_section_titles[key]
+                for i in range(1, len(item.path)):
                     section_key = ".".join(item.path[:i])
                     if section_title := section_titles.pop(section_key, None):
-                        headers[header_key].extend(
-                            [
-                                (" ", ""),
-                                (" ", section_title),
-                                (" ", ""),
-                            ]
-                        )
+                        hdu.header.append(Card(" "))
+                        hdu.header.append(Card(" ", section_title))
+                        hdu.header.append(Card(" "))
 
-                # check for a header comment
-                headers[header_key].append(
-                    (
-                        item.subschema["fits_keyword"],
-                        node,
-                        _get_short_doc(item.subschema),
-                    )
-                )
+                # then add keycard
+                hdu.header.append(Card(keyword, node, _get_short_doc(item.subschema)))
+        return fitsfile
 
-        # now map extra.... TODO should this be outside?
-        for hdu_name, hdu_info in extra.items():
-            # hdu_info = {"data": ..., "header": [(k, v, comment)]}
-            if "data" in hdu_info:
-                data = hdu_info["data"]
-                # FIXME case NOT handled here
-                hdus[(hdu_name, 1)]
-                hdu_type = fits.BinTableHDU if data.dtype.fields else fits.ImageHDU
-                # FIXME is 1 always right here?
-                hdu = hdu_type(name=hdu_name, data=data, ver=1)
-                hdus[(hdu_name, 1)] = hdu
-            if "header" in hdu_info:
-                # FIXME case NOT handled here
-                header_key = (hdu_name, 1)
-                if header_key not in headers:
-                    headers[header_key] = []
-                headers[header_key].extend(hdu_info["header"])
-
-        # apply headers
-        for key in headers:
-            if key in hdus:
-                hdu = hdus[key]
+    def to_hdulist(self, model, extra=None):
+        extra = {} or extra
+        fitsfile = self.to_fitsfile(model.instance)
+        for name, data in extra.items():
+            if name not in fitsfile:
+                hdu = HDU(name)
+                fitsfile.append(hdu)
             else:
-                hdu = fits.ImageHDU(name=key[0], ver=key[1])
-                hdus[key] = hdu
-            # end is needed here or else astropy reorders things and takes significantly longer
-            hdu.header.extend(headers[key], end=True)
+                hdu = fitsfile[name]
+            if "data" in data:
+                hdu.data = data
+            if "header" in data:
+                for card_data in data["header"]:
+                    hdu.header.set_card(Card(*card_data))
+        return fitsfile.to_astropy()
 
-        return fits.HDUList(list(hdus.values()))
-
-    def from_hdulist(self, hdulist, tree=None):
+    def from_fitsfile(self, fitsfile, tree=None):
         tree = tree or {}
-        # pre-index hdulist and headers
-        # this also gets returned to track what was not mapped
-        hdus = {}
-        for hdu in hdulist:
-            # TODO case NOT handled
-            name = hdu.name.upper()
-            if name not in hdus:
-                hdus[name] = {}
-            ver = hdu.ver
-            assert ver not in hdus[name]
-            hdus[name][ver] = {
-                "data": hdu.data,
-                "header": {
-                    card.keyword.upper(): (card.value, card.comment) for card in hdu.header.cards
-                },
-            }
+        seen_data = set()
+        seen_keywords = {}
 
         for entry in self.entries:
-            name = entry.name.upper()
-
-            if name not in hdus:
+            if entry.name not in fitsfile:
                 continue
 
-            matching_hdus = hdus[name]
-
             if entry.mapping_type == MappingType.ARRAY:
-                # pop data for these hdus
-                data = {}
-                for ver, hdu in matching_hdus.items():
-                    if hdu["data"] is not None:
-                        data[ver] = hdu["data"]
-                        # set data to None to mark it as mapped
-                        hdu["data"] = None
-                _set_tree_data(tree, entry.path, data)
+                seen_data.add(entry.name)
+                _set_tree_data(tree, entry.path, fitsfile.by_version(entry.name))
                 continue
 
             # keyword
-            keyword = entry.subschema["fits_keyword"].upper()
-            values_by_ver = {}
-            for ver, hdu in matching_hdus.items():
-                if keyword in hdu["header"]:
-                    values_by_ver[ver] = hdu["header"].pop(keyword)[0]
+            keyword = entry.subschema["fits_keyword"]
+            values_by_ver = {
+                ver: hdu.header[keyword]
+                for ver, hdu in fitsfile.by_version(entry.name).items()
+                if keyword in hdu.header
+            }
             if not values_by_ver:
-                # nothing to set
                 continue
+            if entry.name not in seen_keywords:
+                seen_keywords[entry.name] = {}
+            for ver in values_by_ver.keys():
+                seen_keywords[entry.name][ver] = keyword
             _set_tree_data(tree, entry.path, values_by_ver)
-        # FIXME extra isn't in quite the same format
-        # headers are key: (value, comment) not (key, value, comment)
-        return tree, hdus
+
+        return tree, seen_data, seen_keywords
+
+    def from_hdulist(self, hdulist, tree=None):
+        fitsfile = FITSFile.from_astropy(hdulist)
+        return self.from_fitsfile(fitsfile, tree)
