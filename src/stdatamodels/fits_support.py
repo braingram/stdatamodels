@@ -24,6 +24,7 @@ from stdatamodels._fits_support._asdf import (
     _create_tagged_dict_for_fits_array,
 )
 from stdatamodels._fits_support._fits import FITS_HASH_KEY, fits_hash, is_builtin_fits_keyword
+from stdatamodels._fits_support._mapping import FITSASDFMapping
 from stdatamodels._fits_support._schema import _get_short_doc
 
 log = logging.getLogger(__name__)
@@ -493,13 +494,18 @@ def to_fits(tree, schema, hdulist=None):
     hdulist : astropy.io.fits.HDUList
         The HDU list.
     """
-    if hdulist is None:
-        hdulist = fits.HDUList()
-        hdulist.append(fits.PrimaryHDU())
+    mapping = FITSASDFMapping.from_schema(schema)
+    # We can't pre-populate tree["history"] as assigning to HISTORY appends for astropy
+    # TODO skipping supporting providing an hdulist for now
+    hdulist = mapping.to_hdulist(tree, tree.get("extra_fits", {}))
 
-    tree = _normalize_arrays(tree)
-    tree = _save_from_schema(hdulist, tree, schema)
-    tree = _save_extra_fits(hdulist, tree)
+    # if hdulist is None:
+    #     hdulist = fits.HDUList()
+    #     hdulist.append(fits.PrimaryHDU())
+
+    # tree = _normalize_arrays(tree)
+    # tree = _save_from_schema(hdulist, tree, schema)
+    # tree = _save_extra_fits(hdulist, tree)
     _save_history(hdulist, tree)
 
     # Store the FITS hash in the tree

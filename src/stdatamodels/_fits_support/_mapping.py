@@ -1,7 +1,11 @@
+import datetime
 from collections import deque
 from dataclasses import dataclass
 from enum import Enum, unique
 
+import astropy.time
+
+from stdatamodels._fits_support._asdf import _link_fits_array
 from stdatamodels._fits_support._fits import HDU, Card, FITSFile
 from stdatamodels._fits_support._schema import _get_short_doc
 from stdatamodels.schema import walk_schema
@@ -91,6 +95,9 @@ class FITSASDFMapping:
         # track section titles for later writing as FITS comments
         section_titles = {}
 
+        # track entries already seen
+        seen = set()
+
         def callback(subschema, path, combiner, entries, recurse):
             if not isinstance(subschema, dict):
                 return
@@ -106,6 +113,10 @@ class FITSASDFMapping:
             # default to PRIMARY
             fits_hdu = subschema.get("fits_hdu", "PRIMARY")
             mapping_type = MappingType.KEYWORD if "fits_keyword" in subschema else MappingType.ARRAY
+            seen_key = (fits_hdu, mapping_type, ".".join(path))
+            if seen_key in seen:
+                return
+            seen.add(seen_key)
             entries.append(MappingEntry(fits_hdu, mapping_type, path, subschema))
 
         entries = []
@@ -142,21 +153,21 @@ class FITSASDFMapping:
         if fitsfile is None:
             fitsfile = FITSFile()
 
-        # queue items = (tree, subgraph, version)
-        queue = deque([(tree, self.graph, 1)])
+        # queue items = (tree, subgraph, version, parent, child_key)
+        queue = deque([(tree, self.graph, 1, None, None)])
 
         while queue:
-            node, item, ver = queue.popleft()
+            node, item, ver, parent, child_key = queue.popleft()
             if isinstance(item, dict):  # subgraph, populate queue
                 if isinstance(node, dict):
                     for k, v in item.items():
                         if k not in node:
                             continue
-                        queue.append((node[k], v, ver))
+                        queue.append((node[k], v, ver, node, k))
                 else:
                     subitem = item["items"]
                     for i, subnode in enumerate(node):
-                        queue.append((subnode, subitem, i + 1))
+                        queue.append((subnode, subitem, i + 1, node, i))
             else:
                 key = (item.name, ver)
                 if key in fitsfile:
@@ -167,7 +178,9 @@ class FITSASDFMapping:
 
                 # process item
                 if item.mapping_type == MappingType.ARRAY:
+                    # record the mapping of node to data here
                     hdu.data = node
+                    parent[child_key] = _link_fits_array(hdu)
                     continue
 
                 # keyword
@@ -193,13 +206,21 @@ class FITSASDFMapping:
                         hdu.header.append(Card(" ", section_title))
                         hdu.header.append(Card(" "))
 
+                if isinstance(node, datetime.datetime):
+                    node = astropy.time.Time(node)
+                if isinstance(node, astropy.time.Time):
+                    node = str(astropy.time.Time(node, format="iso"))
                 # then add keycard
                 hdu.header.append(Card(keyword, node, _get_short_doc(item.subschema)))
         return fitsfile
 
     def to_hdulist(self, model, extra=None):
+        if hasattr(model, "instance"):
+            tree = model.instance
+        else:
+            tree = model
         extra = {} or extra
-        fitsfile = self.to_fitsfile(model.instance)
+        fitsfile = self.to_fitsfile(tree.copy())
         for name, data in extra.items():
             if name not in fitsfile:
                 hdu = HDU(name)
@@ -207,7 +228,7 @@ class FITSASDFMapping:
             else:
                 hdu = fitsfile[name]
             if "data" in data:
-                hdu.data = data
+                hdu.data = data["data"]
             if "header" in data:
                 for card_data in data["header"]:
                     hdu.header.set_card(Card(*card_data))

@@ -55,3 +55,23 @@ def _create_tagged_dict_for_fits_array(hdu, hdu_index):
         },
         tag=_NDARRAY_TAG,
     )
+
+
+def _link_fits_array(hdu):
+    # Views over arrays stored in FITS files have some idiosyncrasies.
+    # astropy.io.fits always writes arrays C-contiguous with big-endian
+    # byte order, whereas asdf preserves the "contiguousity" and byte order
+    # of the base array.
+    dtype, byteorder = ndarray.numpy_dtype_to_asdf_datatype(
+        hdu.data.dtype, include_byteorder=True, override_byteorder="big"
+    )
+
+    return tagged.TaggedDict(
+        data={
+            "source": f"{_FITS_SOURCE_PREFIX}{hdu.name},{hdu.version}",
+            "shape": list(hdu.data.shape),
+            "datatype": dtype,
+            "byteorder": byteorder,
+        },
+        tag=_NDARRAY_TAG,
+    )
