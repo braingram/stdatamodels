@@ -514,7 +514,8 @@ def to_fits(tree, schema, hdulist=None):
     if _ASDF_EXTENSION_NAME in hdulist:
         del hdulist[_ASDF_EXTENSION_NAME]
 
-    hdulist.append(_create_asdf_hdu(tree))
+    # TODO doesn't catch modified schemas
+    hdulist.append(_create_asdf_hdu(tree, schema))
 
     return hdulist
 
