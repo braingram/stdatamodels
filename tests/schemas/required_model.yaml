@@ -1,5 +1,5 @@
 $schema: http://stsci.edu/schemas/yaml-schema/draft-01
-id: http://example.com/schemas/validation_model
+id: http://example.com/schemas/required_model
 title: Model with a required attribute.
 
 allOf:
