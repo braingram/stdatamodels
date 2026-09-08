@@ -9,6 +9,7 @@ from stdatamodels._fits_support._asdf import _link_fits_array
 from stdatamodels._fits_support._fits import HDU, Card, FITSFile
 from stdatamodels._fits_support._schema import _get_short_doc
 from stdatamodels.schema import walk_schema
+from stdatamodels.validate import _validate_datatype
 
 DEFAULT_HDU_ORDER = ["PRIMARY", "SCI", "DQ", "ERR"]
 
@@ -178,9 +179,15 @@ class FITSASDFMapping:
 
                 # process item
                 if item.mapping_type == MappingType.ARRAY:
+                    # validate datatype here since we lie to asdf
+                    if "datatype" in item.subschema:
+                        for error in _validate_datatype(
+                            None, item.subschema["datatype"], node, item.subschema
+                        ):
+                            raise error
                     # record the mapping of node to data here
                     hdu.data = node
-                    parent[child_key] = _link_fits_array(hdu)
+                    parent[child_key] = _link_fits_array(hdu, item.subschema)
                     continue
 
                 # keyword
