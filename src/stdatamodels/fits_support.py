@@ -494,6 +494,7 @@ def to_fits(tree, schema, hdulist=None):
     hdulist : astropy.io.fits.HDUList
         The HDU list.
     """
+    tree = tree.copy()
     mapping = FITSASDFMapping.from_schema(schema)
     # We can't pre-populate tree["history"] as assigning to HISTORY appends for astropy
     # TODO skipping supporting providing an hdulist for now

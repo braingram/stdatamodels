@@ -214,13 +214,9 @@ class FITSASDFMapping:
                 hdu.header.append(Card(keyword, node, _get_short_doc(item.subschema)))
         return fitsfile
 
-    def to_hdulist(self, model, extra=None):
-        if hasattr(model, "instance"):
-            tree = model.instance
-        else:
-            tree = model
+    def to_hdulist(self, tree, extra=None):
         extra = {} or extra
-        fitsfile = self.to_fitsfile(tree.copy())
+        fitsfile = self.to_fitsfile(tree)
         for name, data in extra.items():
             if name not in fitsfile:
                 hdu = HDU(name)
