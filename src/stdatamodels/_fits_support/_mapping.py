@@ -157,18 +157,30 @@ class FITSASDFMapping:
         # queue items = (tree, subgraph, version, parent, child_key)
         queue = deque([(tree, self.graph, 1, None, None)])
 
+        # FIXME order isn't right here for slits with WCS-TABLE
+        # where WCS-TABLE is a top-level thing (wavetable or like)
+        # and slits are items under some other top-level thing (slits)
+        # the expectation is that all slits will be listed first
+        # [primary, slit0 stuff, slit1 stuff... wavetable]
+        # so if I always popleft and appendleft (fifo)
+        # and add things in reverse order things work.
+        # However there may be an equivalent with less flips.
+        i = 0
         while queue:
             node, item, ver, parent, child_key = queue.popleft()
+            i += 1
             if isinstance(item, dict):  # subgraph, populate queue
                 if isinstance(node, dict):
-                    for k, v in item.items():
+                    for k, v in list(item.items())[::-1]:
                         if k not in node:
                             continue
-                        queue.append((node[k], v, ver, node, k))
+                        queue.appendleft((node[k], v, ver, node, k))
                 else:
                     subitem = item["items"]
-                    for i, subnode in enumerate(node):
-                        queue.append((subnode, subitem, i + 1, node, i))
+                    for i in range(len(node)):
+                        i = len(node) - i - 1
+                        subnode = node[i]
+                        queue.appendleft((subnode, subitem, i + 1, node, i))
             else:
                 key = (item.name, ver)
                 if key in fitsfile:
