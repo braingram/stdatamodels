@@ -10,6 +10,12 @@ from asdf.treeutil import RemoveNode
 from astropy.io import fits
 
 
+def _reorder_array(a, new_order):
+    if not isinstance(a, fits.FITS_rec):
+        return a[list(new_order)]
+    return fits.FITS_rec.from_columns([a.columns[n] for n in new_order])
+
+
 def gentle_asarray(a, dtype, allow_extra_columns=False):
     """
     Convert to dtype ignoring case differences in column names for structured arrays (tables).
@@ -95,7 +101,7 @@ def gentle_asarray(a, dtype, allow_extra_columns=False):
         # all the columns exist but they are in the wrong order
         # reorder the columns, the names might differ in case
         reordered_names = sorted(in_dtype.names, key=lambda n: out_lower_names.index(n.lower()))
-        reordered_array = a[reordered_names]
+        reordered_array = _reorder_array(a, reordered_names)
         return _safe_asanyarray(reordered_array, out_dtype)
 
     # if extra columns are not allowed or they are (and the required columns are missing)
@@ -145,7 +151,7 @@ def gentle_asarray(a, dtype, allow_extra_columns=False):
     required_names.sort(key=lambda n: out_lower_names.index(n.lower()))
     extra_names = [n for n in in_dtype.names if n.lower() not in out_lower_names]
     names_ordered = tuple(required_names + extra_names)
-    reordered_array = a[list(names_ordered)]
+    reordered_array = _reorder_array(a, names_ordered)
 
     required_dtype = [
         (name, out_dtype[name].base, out_dtype[name].shape) for name in out_dtype.names
