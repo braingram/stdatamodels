@@ -29,22 +29,6 @@ def _is_struct_array_schema(schema):
     return isinstance(schema["datatype"], list) and any("name" in t for t in schema["datatype"])
 
 
-def _get_recarray_dtype(val, schema):
-    if hasattr(val, "dtype"):
-        return val.dtype
-    item = val[0]
-    arrs = [np.array(subitem) for subitem in item]
-    # we assume here naming order from schema (as was the case with the old code)
-    names = [subschema["name"] for subschema in schema["datatype"]]
-    dtype = np.dtype(
-        [
-            (names[i] if i < len(names) else str(i), arr.dtype, arr.shape)
-            for (i, arr) in enumerate(arrs)
-        ]
-    )
-    return dtype
-
-
 def _cast(val, schema):
     val = _unmake_node(val)
     if val is None:
@@ -66,26 +50,40 @@ def _cast(val, schema):
             # modify schema (to add shape), we make a deep copy of the
             # schema here:
             schema = copy.deepcopy(schema)
-            dtype = _get_recarray_dtype(val, schema)
 
-            for t in schema["datatype"]:
+            # we need to check shape of the input data (val)
+            # which may not yet be an array. Generate 2 mappings, one by
+            # name (if the input supports it) and one by index so the shape
+            # lookup below will work for inputs with and without dtypes.
+            shapes_by_name = {}
+            shapes_by_index = {}
+            if hasattr(val, "dtype"):
+                for name in val.dtype.names:
+                    # use lower here since FITS_rec is case insensitive
+                    shapes_by_name[name.lower()] = val.dtype[name].shape
+            if len(val) and len(val[0]):
+                for i, item in enumerate(val[0]):
+                    shapes_by_index[i] = np.array(item).shape
+
+            for i, t in enumerate(schema["datatype"]):
                 if not isinstance(t, Mapping):
                     continue
 
-                name = t["name"]
+                name = t["name"].lower()
 
-                # find dtype with this name
-                dtype_name = None
-                for dt_name in dtype.names:
-                    if dt_name.lower() == name.lower():
-                        dtype_name = dt_name
-                        break
-
-                # no matching field name
-                if dtype_name is None:
+                # do we have input sub-shapes (column shapes) to use?
+                # first check by column name
+                if name in shapes_by_name:
+                    shape = shapes_by_name[name]
+                elif i in shapes_by_index:
+                    # if no shape by name, use index. This assumes that
+                    # the order of input columns matches the schema which is all
+                    # we can do at this point.
+                    shape = shapes_by_index[i]
+                else:
+                    # no shape available, nothing to do
                     continue
 
-                shape = dtype[dtype_name].shape
                 ndim = len(shape) or 1
 
                 # make sure that if 'ndim' is specified for a field,
