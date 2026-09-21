@@ -29,6 +29,22 @@ def _is_struct_array_schema(schema):
     return isinstance(schema["datatype"], list) and any("name" in t for t in schema["datatype"])
 
 
+def _get_recarray_dtype(val, schema):
+    if hasattr(val, "dtype"):
+        return val.dtype
+    item = val[0]
+    arrs = [np.array(subitem) for subitem in item]
+    # we assume here naming order from schema (as was the case with the old code)
+    names = [subschema["name"] for subschema in schema["datatype"]]
+    dtype = np.dtype(
+        [
+            (names[i] if i < len(names) else str(i), arr.dtype, arr.shape)
+            for (i, arr) in enumerate(arrs)
+        ]
+    )
+    return dtype
+
+
 def _cast(val, schema):
     val = _unmake_node(val)
     if val is None:
@@ -40,39 +56,51 @@ def _cast(val, schema):
             val = val._make_array()
 
         allow_extra_columns = False
-        if "allow_extra_columns" in schema:
-            allow_extra_columns = schema["allow_extra_columns"]
-        if (
-            _is_struct_array_schema(schema)
-            and len(val)
-            and (_is_struct_array_precursor(val) or _is_struct_array(val))
+        if _is_struct_array_schema(schema) and (
+            _is_struct_array_precursor(val) or _is_struct_array(val)
         ):
+            if "allow_extra_columns" in schema:
+                allow_extra_columns = schema["allow_extra_columns"]
+
             # we are dealing with a structured array. Because we may
             # modify schema (to add shape), we make a deep copy of the
             # schema here:
             schema = copy.deepcopy(schema)
+            dtype = _get_recarray_dtype(val, schema)
 
-            for t, v in zip(schema["datatype"], val[0], strict=False):
+            for t in schema["datatype"]:
                 if not isinstance(t, Mapping):
                     continue
 
-                aval = np.asanyarray(v)
-                shape = aval.shape
-                val_ndim = len(shape)
+                name = t["name"]
+
+                # find dtype with this name
+                dtype_name = None
+                for dt_name in dtype.names:
+                    if dt_name.lower() == name.lower():
+                        dtype_name = dt_name
+                        break
+
+                # no matching field name
+                if dtype_name is None:
+                    continue
+
+                shape = dtype[dtype_name].shape
+                ndim = len(shape) or 1
 
                 # make sure that if 'ndim' is specified for a field,
                 # it matches the dimensionality of val's field:
-                if "ndim" in t and val_ndim != t["ndim"]:
+                if "ndim" in t and ndim != t["ndim"]:
                     raise ValueError(
                         "Array has wrong number of dimensions. Expected {}, got {}".format(
-                            t["ndim"], val_ndim
+                            t["ndim"], ndim
                         )
                     )
 
-                if "max_ndim" in t and val_ndim > t["max_ndim"]:
+                if "max_ndim" in t and ndim > t["max_ndim"]:
                     raise ValueError(
                         "Array has wrong number of dimensions. Expected <= {}, got {}".format(
-                            t["max_ndim"], val_ndim
+                            t["max_ndim"], ndim
                         )
                     )
 
