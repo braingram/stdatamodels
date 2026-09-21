@@ -8,7 +8,6 @@ import numpy as np
 from asdf import treeutil
 from asdf.treeutil import RemoveNode
 from astropy.io import fits
-from numpy.lib.recfunctions import merge_arrays
 
 
 def gentle_asarray(a, dtype, allow_extra_columns=False):
@@ -96,13 +95,8 @@ def gentle_asarray(a, dtype, allow_extra_columns=False):
         # all the columns exist but they are in the wrong order
         # reorder the columns, the names might differ in case
         reordered_names = sorted(in_dtype.names, key=lambda n: out_lower_names.index(n.lower()))
-        reordered_array = merge_arrays([a[n] for n in reordered_names], flatten=True)
-        reordered_subdtypes = [reordered_array.dtype[n] for n in reordered_array.dtype.names]
-        out_subdtypes = [out_dtype[n] for n in out_dtype.names]
-        if reordered_subdtypes == out_subdtypes:
-            return reordered_array.view(out_dtype)
-        else:
-            return _safe_asanyarray(reordered_array, out_dtype)
+        reordered_array = a[reordered_names]
+        return _safe_asanyarray(reordered_array, out_dtype)
 
     # if extra columns are not allowed or they are (and the required columns are missing)
     # then raise an exception
@@ -139,7 +133,11 @@ def gentle_asarray(a, dtype, allow_extra_columns=False):
                     in_dtype.names[:n_required], out_dtype.names, strict=False
                 )
             ]
-            new_dtype = np.dtype(required_dtype + new_dtype.descr[len(out_dtype.descr) :])
+            extra_dtype = [
+                (name, new_dtype[name].base, new_dtype[name].shape)
+                for name in new_dtype.names[len(out_dtype) :]
+            ]
+            new_dtype = np.dtype(required_dtype + extra_dtype)
             return _safe_asanyarray(a, new_dtype)
 
     # reorder columns so required columns are first
@@ -147,17 +145,13 @@ def gentle_asarray(a, dtype, allow_extra_columns=False):
     required_names.sort(key=lambda n: out_lower_names.index(n.lower()))
     extra_names = [n for n in in_dtype.names if n.lower() not in out_lower_names]
     names_ordered = tuple(required_names + extra_names)
-    reordered_array = merge_arrays([a[n] for n in names_ordered], flatten=True)
-    reordered_array.dtype.names = names_ordered
+    reordered_array = a[list(names_ordered)]
 
-    extra_dtype_descr = [(n, in_dtype[n]) for n in extra_names]
-    new_dtype = np.dtype(out_dtype.descr + extra_dtype_descr)
-
-    # check that required columns have the correct dtype
-    reordered_subdtypes = [reordered_array.dtype[n] for n in reordered_array.dtype.names]
-    out_subdtypes = [out_dtype[n] for n in out_dtype.names]
-    if reordered_subdtypes[:n_required] == out_subdtypes:
-        return reordered_array.view(new_dtype)
+    required_dtype = [
+        (name, out_dtype[name].base, out_dtype[name].shape) for name in out_dtype.names
+    ]
+    extra_dtype = [(n, in_dtype[n].base, in_dtype[n].shape) for n in extra_names]
+    new_dtype = np.dtype(required_dtype + extra_dtype)
     return _safe_asanyarray(reordered_array, new_dtype)
 
 
