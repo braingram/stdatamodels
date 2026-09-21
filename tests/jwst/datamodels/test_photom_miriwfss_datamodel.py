@@ -27,9 +27,9 @@ def test_miri_wfss_photom():
             ("photmjsr", "f4"),
             ("uncertainty", "f4"),
             ("nelem", "i2"),  # int16 per schema
-            ("wavelength", "O"),
-            ("relresponse", "O"),
-            ("reluncertainty", "O"),
+            ("wavelength", "f4", nelem),
+            ("relresponse", "f4", nelem),
+            ("reluncertainty", "f4", nelem),
         ]
     )
 
