@@ -151,6 +151,31 @@ def test_table_array_shape_ndim(filename, tmp_path):
                 )
             ]
 
+    with TableModel() as x:
+        # test default which produces an empty array since we didn't provide a shape
+        x.table = x.get_default("table")
+
+        # save to test if default is valid on save
+        x.save(file_path)
+
+    with TableModel((5,)) as x:
+        # test default with a non-empty array (since we provided shape)
+        x.table = x.get_default("table")
+
+        # save to test if default is valid on save
+        x.save(file_path)
+
+    with TableModel((5,)) as x:
+        # test default with reordered columns
+        arr = x.get_default("table")
+        default_names = list(arr.dtype.names)
+        arr = arr[default_names[::-1]]
+        x.table = arr
+        assert list(x.table.dtype.names) == default_names
+
+        # save to test if default is valid on save
+        x.save(file_path)
+
 
 def test_implicit_creation_lower_dimensionality():
     with BasicModel(np.zeros((10, 20))) as m:
