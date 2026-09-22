@@ -198,13 +198,14 @@ def test_gentle_asarray_invalid_conversion():
         util.gentle_asarray(object(), dtype=np.float32)
 
 
+@pytest.mark.parametrize("empty", [True, False], ids=["empty", "full"])
 @pytest.mark.parametrize("reorder", [True, False], ids=["different_order", "same_order"])
 @pytest.mark.parametrize("change_dtype", [True, False], ids=["different_dtype", "same_dtype"])
 @pytest.mark.parametrize("extra_columns", [True, False], ids=["extra_columns", "no_extra_columns"])
 @pytest.mark.parametrize("allow_extra", [True, False], ids=["allow_extra", "disallow_extra"])
 @pytest.mark.parametrize("change_case", [True, False], ids=["changed_case", "same_case"])
 def test_gentle_asarray_structured_dtype_configurations(
-    reorder, change_dtype, extra_columns, allow_extra, change_case
+    empty, reorder, change_dtype, extra_columns, allow_extra, change_case
 ):
     """
     Test gentle_asarray with a structured array with a few combinations of:
@@ -241,12 +242,13 @@ def test_gentle_asarray_structured_dtype_configurations(
 
     # generate the input datatype and data
     input_dtype = np.dtype(input_descr)
-    input_array = np.zeros(5, input_dtype)
-    input_array["i"] = 2
-    input_array["f"] = 0.1
-    input_array["s"] = b"a"
-    input_array["b"] = True
-    input_array["u"] = 3
+    input_array = np.zeros(0 if empty else 5, input_dtype)
+    if not empty:
+        input_array["i"] = 2
+        input_array["f"] = 0.1
+        input_array["s"] = b"a"
+        input_array["b"] = True
+        input_array["u"] = 3
     if change_case:
         input_array.dtype.names = tuple([n.upper() for n in input_array.dtype.names])
         input_dtype = input_array.dtype
@@ -260,11 +262,12 @@ def test_gentle_asarray_structured_dtype_configurations(
 
     new_array = util.gentle_asarray(input_array, target_dtype, allow_extra_columns=allow_extra)
     # check data passed through correctly
-    assert np.all(new_array["i"] == 2)
-    assert np.allclose(new_array["f"], 0.1)
-    assert np.all(new_array["s"] == b"a")
-    assert np.all(new_array["b"])
-    assert np.all(new_array["u"] == 3)
+    if not empty:
+        assert np.all(new_array["i"] == 2)
+        assert np.allclose(new_array["f"], 0.1)
+        assert np.all(new_array["s"] == b"a")
+        assert np.all(new_array["b"])
+        assert np.all(new_array["u"] == 3)
     if not extra_columns:
         # if we have not extra columns, the output dtype should match the target
         assert new_array.dtype == target_dtype
