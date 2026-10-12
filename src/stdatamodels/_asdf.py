@@ -8,8 +8,9 @@ import asdf
 ALLOWED_EXTENSION_URIS = {
     "asdf://astropy.org/astropy/extensions/astropy-1.6.0",
     "asdf://asdf-format.org/astronomy/coordinates/extensions/coordinates-1.3.0",
+    "asdf://asdf-format.org/astronomy/coordinates/extensions/coordinates-1.0.0",  # required due to a bug in asdf-astropy
     "asdf://asdf-format.org/transform/extensions/transform-1.7.0",
-    "asdf://asdf-format.org/transform/extensions/transform-1.0.0",  # required due to a bug in asdf-astropy (still not working)
+    "asdf://asdf-format.org/transform/extensions/transform-1.0.0",  # required due to a bug in asdf-astropy
     "asdf://astropy.org/astropy/extensions/units-1.3.0",
     "asdf://asdf-format.org/astronomy/extensions/astronomy-1.2.0",
     "asdf://astropy.org/core/extensions/core-1.5.0",
